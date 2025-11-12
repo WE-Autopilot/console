@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'control_interface'
+package_name = 'ap1_control_interface'
 
 setup(
     name=package_name,
@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'control_interface = control_interface.control_ui:main',
+            'system_interface = control_interface.main:main',
         ],
     },
 )

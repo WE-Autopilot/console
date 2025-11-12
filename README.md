@@ -9,7 +9,7 @@ This is to avoid apt screwing you with a version of textual from 1200 BC.
 
 ## Running
 
-You'll have to launch this through python by doing `python control_interface/control_ui.py` instead of
+You'll have to launch this through python by doing `python control_interface/main.py` instead of
 a ros2 command. I haven't yet been able to figure out how to get ros2 to see pkgs installed in venv or
 use the interpreter/pip located in .venv.
 

@@ -1,0 +1,45 @@
+Screen {
+    layout: vertical;
+}
+
+DiagnosticsDisplay {
+    height: 12;
+    background: $surface;
+    border: solid $primary;
+    margin: 1;
+    padding: 1;
+}
+
+#cli_container {
+    height: 1fr;
+    border: solid $accent;
+    margin: 1;
+}
+
+#cli_header {
+    background: $accent;
+    color: $text;
+    height: 1;
+    content-align: center middle;
+    text-style: bold;
+}
+
+#output_scroll {
+    height: 1fr;
+    background: $surface;
+    padding: 1;
+}
+
+CommandOutput {
+    height: auto;
+}
+
+#input_container {
+    height: 5;
+    background: $panel;
+    padding: 1;
+}
+
+Input {
+    width: 100%;
+}
