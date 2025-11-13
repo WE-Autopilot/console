@@ -1,6 +1,6 @@
 from textual.widgets import Static
 
-from node import AP1SystemInterfaceNode
+from ap1_control_interface.node import AP1SystemInterfaceNode
 
 class DiagnosticsDisplay(Static):
     """

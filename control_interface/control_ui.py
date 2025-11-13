@@ -6,14 +6,14 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.widgets import Header, Footer, Input, Label
 
-from node import AP1SystemInterfaceNode
-from command_output import CommandOutput
-from diagnostics_display import DiagnosticsDisplay
+from ap1_control_interface.node import AP1SystemInterfaceNode
+from ap1_control_interface.command_output import CommandOutput
+from ap1_control_interface.diagnostics_display import DiagnosticsDisplay
 
 class AP1DebugUI(App):
     # me n my homies hate writing css
     # god bless chat:
-    CSS_PATH = 'style.css'
+    CSS_PATH = "styles.css"
 
     def __init__(self, node: AP1SystemInterfaceNode):
         super().__init__()

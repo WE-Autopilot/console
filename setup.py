@@ -24,7 +24,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'system_interface = control_interface.main:main',
+            'system_interface = ap1_control_interface.main:main',
         ],
     },
 )
