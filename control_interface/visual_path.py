@@ -96,11 +96,11 @@ class PathCanvas(Canvas):
             # convert global coords to canvas
             sx, sy = global_to_canvas_coords(Point(x, y))
             canvas_cx = self.width // 2
-            canvas_cy = self.height - 1
+            canvas_cy = self.height - 1 
             sx = canvas_cx + sx 
             sy = canvas_cy - sy
 
-            # color mapping for features
+            # map colors to features
             if feature_type == 'stop_sign':
                 color = RED
             elif feature_type == 'traffic_light':
