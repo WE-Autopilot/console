@@ -10,6 +10,10 @@ from node import AP1SystemInterfaceNode
 WHITE = Color.parse("white")
 DIM = Color.parse("darkgrey")
 RED = Color.parse("red")
+GREEN = Color.parse("green")
+YELLOW = Color.parse("yellow")
+PURPLE = Color.parse("purple")
+BLUE = Color.parse("blue")
 
 # EXAMPLE WAYPOINTS
 DEBUG_WAYPOINTS = [(0,0), (5,15), (10,20), (20,25)]
@@ -83,6 +87,33 @@ class PathCanvas(Canvas):
             x, y = global_to_canvas_coords(point)
             sx = cx + x # shift origin to center
             sy = cy - y # flip y upward
-            self.set_pixel(sx, sy, RED)
+            self.set_pixel(sx, sy, PURPLE)
+
+        # draw features on top
+        for feature in self.node.features:
+            feature_type, x, y = feature
+
+            # convert global coords to canvas
+            sx, sy = global_to_canvas_coords(Point(x, y))
+            canvas_cx = self.width // 2
+            canvas_cy = self.height - 1
+            sx = canvas_cx + sx 
+            sy = canvas_cy - sy
+
+            # color mapping for features
+            if feature_type == 'stop_sign':
+                color = RED
+            elif feature_type == 'traffic_light':
+                color = GREEN
+            elif feature_type == 'stop_line':
+                color = YELLOW
+            elif feature_type == 'yield_sign':
+                color = BLUE
+            else:
+                color = WHITE 
+
+            if 0 <= sx < self.width and 0 <= sy < self.height:
+                self.set_pixel(sx, sy, color)
+
 
  

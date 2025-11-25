@@ -2,6 +2,9 @@ from rclpy.node import Node
 from geometry_msgs.msg import Point 
 from ap1_msgs.msg import VehicleSpeedStamped, TurnAngleStamped, MotorPowerStamped, TargetPathStamped, SpeedProfileStamped
 
+import xml.etree.ElementTree as ET
+from std_msgs.msg import String
+
 class AP1SystemInterfaceNode(Node):
     def __init__(self):
         super().__init__('ap1_debug_ui')
@@ -16,6 +19,7 @@ class AP1SystemInterfaceNode(Node):
         self.current_motor_power_sub = self.create_subscription(MotorPowerStamped, '/ap1/control/motor_power', self.motor_power_callback, 10)
         self.path_sub = self.create_subscription(TargetPathStamped, '/ap1/planning/target_path', self.target_path_callback, 10)
         self.speed_profile = self.create_subscription(SpeedProfileStamped, '/ap1/planning/speed_profile', self.speed_profile_callback, 10)
+        self.xml_sub = self.create_subscription(String, '/ap1/map/full_had_map', self.xml_callback, 10)
 
         self.current_speed = 0.0 # m
         self.target_speed = 0.0 # m/s
@@ -24,6 +28,7 @@ class AP1SystemInterfaceNode(Node):
         self.current_turn_angle = 0.0 # rads
         self.target_path = [] # waypoints
         self.speed_profile = [] # m/s
+        self.features = [] # features from map
 
     def speed_callback(self, msg: VehicleSpeedStamped):
         self.current_speed = msg.speed
@@ -60,6 +65,20 @@ class AP1SystemInterfaceNode(Node):
         msg.z = 0.0
         self.target_location_pub.publish(msg)
         self.get_logger().info(f'Sent target location: ({x}, {y})')
+
+    def xml_callback(self, msg: String):
+        self.features.clear() # clear existing features
+        root = ET.fromstring(msg.data)
+        for feature in root.findall('Feature'): # parse features
+            feature_type = feature.find('Type').text
+            pos = feature.find('Position')
+            x = float(pos.find('X').text)
+            y = float(pos.find('Y').text)
+            if feature_type in ['stop_sign', 'stop_line', 'traffic_light', 'yield_sign']: 
+                self.features.append((feature_type, x, y)) 
+            else: 
+                self.features.append(('unknown', x, y))
+        self.get_logger().info(f"Parsed {len(self.features)} features from XML")
 
 # TEMPORARY
 if __name__ == '__main__':
