@@ -6,10 +6,10 @@ from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll, Horizontal
 from textual.widgets import Header, Footer, Input, Label
 
-from node import AP1SystemInterfaceNode
-from command_output import CommandOutput
-from diagnostics_display import DiagnosticsDisplay
-from visual_path import PathCanvas
+from .node import AP1SystemInterfaceNode
+from .command_output import CommandOutput
+from .diagnostics_display import DiagnosticsDisplay
+from .visual_path import PathCanvas
 
 def print_help(self):
     self.command_output.add_line('=' * 40)

@@ -1,6 +1,6 @@
 from textual.widgets import Static, Label
 from textual.containers import VerticalScroll, Container
-from node import AP1SystemInterfaceNode
+from .node import AP1SystemInterfaceNode
 
 class DiagnosticsDisplay(Container):
     """

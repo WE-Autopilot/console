@@ -1,6 +1,7 @@
 import rclpy
 
-from control_ui import AP1DebugUI, AP1SystemInterfaceNode
+from .control_ui import AP1DebugUI
+from .node import AP1SystemInterfaceNode
 
 # main time bbgl
 def main(args=None):

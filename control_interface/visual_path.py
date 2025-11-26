@@ -5,7 +5,7 @@ Notice that +x is FORWARD and +y is LEFT relative to the CAR.
 from textual_canvas import Canvas 
 from textual.color import Color
 
-from node import AP1SystemInterfaceNode
+from .node import AP1SystemInterfaceNode
 
 WHITE = Color.parse("white")
 DIM = Color.parse("darkgrey")
