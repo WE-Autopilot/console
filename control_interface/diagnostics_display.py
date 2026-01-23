@@ -1,15 +1,32 @@
-from textual.widgets import Static, Label
-from textual.containers import VerticalScroll, Container
-from .node import AP1SystemInterfaceNode
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
+from PyQt6.QtCore import QTimer, Qt
+from PyQt6.QtGui import QFont
 
-class DiagnosticsDisplay(Container):
+from node import AP1SystemInterfaceNode
+
+class DiagnosticsDisplay(QWidget):
     """
     All the diagnostics at the top of the display.
     """
 
-    def __init__(self, node: AP1SystemInterfaceNode):
-        super().__init__()
+    def __init__(self, node: AP1SystemInterfaceNode, parent=None):
+        super().__init__(parent)
         self.ros_node = node
+
+        self.layout : QVBoxLayout = QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+        self.content_label = QLabel()
+        self.content_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+
+        font = QFont("Courier New", 10)
+        self.content_label.setFont(font)
+
+        self.layout.addWidget(self.content_label)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_display)
+        self.timer.start(100)
 
     def compose(self):
         with VerticalScroll(id="diagnostics_scroll"):
@@ -37,4 +54,4 @@ Control Interface:
 Control:
 - Motor power:\t{motor_power:6.2f} %
 """
-        self.content.update(display_text)
+        self.content_label.setText(display_text)

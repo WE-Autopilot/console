@@ -1,15 +1,20 @@
-import threading 
+import sys
+import threading
+import signal
 
 import rclpy
 
-from textual.app import App, ComposeResult
-from textual.containers import Container, VerticalScroll, Horizontal
-from textual.widgets import Header, Footer, Input, Label
 
-from .node import AP1SystemInterfaceNode
-from .command_output import CommandOutput
-from .diagnostics_display import DiagnosticsDisplay
-from .visual_path import PathCanvas
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget,
+                            QVBoxLayout, QHBoxLayout, QLineEdit,
+                            QLabel)
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont
+
+from node import AP1SystemInterfaceNode
+from command_output import CommandOutput
+from diagnostics_display import DiagnosticsDisplay
+from visual_path import PathCanvas
 
 def print_help(self):
     self.command_output.add_line('=' * 40)
@@ -23,63 +28,119 @@ def print_help(self):
     self.command_output.add_line('\thelp              - Print this screen')
     self.command_output.add_line('=' * 40)
         
-class AP1DebugUI(App):
+class AP1DebugUI(QMainWindow):
     # me n my homies hate writing css
     # god bless chat:
-    CSS_PATH = 'style.css'
+    # CSS_PATH = 'style.css'
 
-    def __init__(self, node: AP1SystemInterfaceNode):
+    def __init__(self, node: AP1SystemInterfaceNode, app: QApplication):
         super().__init__()
         self.ros_node = node
+        self.setWindowTitle("AP1 Debug UI")
+        self.resize(1000, 700)
+        self.app = app
+
+
+        # -- Fonts --
+        # Main Header Font
+        header_font = QFont("Sans Serif", 16)
+        header_font.setBold(True)
+
+        # Section Header Font (Bold + Underline)
+        section_font = QFont("Sans Serif", 10)
+        section_font.setBold(True)
+        section_font.setUnderline(True)
+
+        # Central Widget
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+
+        main_layout = QVBoxLayout(central_widget)
+
+        # Header
+        header = QLabel("AP1 CONTROL INTERFACE")
+        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header.setFont(header_font)
+        header.setContentsMargins(0, 0, 0, 5)
+        main_layout.addWidget(header)
+
+        # Middle Section
+        middle_layout = QHBoxLayout()
+
+        # Left Pane
+        left_pane = QWidget()
+        left_layout = QVBoxLayout(left_pane)
+        left_layout.setContentsMargins(0,0,0,0)
+
+        # Diagnostics
+        lbl_diag = QLabel("DIAGNOSTICS")
+        lbl_diag.setFont(section_font)
+        left_layout.addWidget(lbl_diag)
+
+        self.diagnostics = DiagnosticsDisplay(self.ros_node)
+        left_layout.addWidget(self.diagnostics)
+
+        # Path Header
+        lbl_path = QLabel("PLANNED PATH")
+        lbl_path.setFont(section_font)
+        lbl_path.setContentsMargins(0, 10, 0, 0)
+        left_layout.addWidget(lbl_path)
+        
+        self.path_canvas = PathCanvas(self.ros_node)
+        left_layout.addWidget(self.path_canvas)
+
+        middle_layout.addWidget(left_pane, stretch=1)
+
+        # Right Pane: Command Output
+        right_pane = QWidget()
+        right_layout = QVBoxLayout(right_pane)
+        right_layout.setContentsMargins(0,0,0,0)
+
+        lbl_cli = QLabel("COMMAND LINE INTERFACE")
+        lbl_cli.setStyleSheet("font-weight: bold; text-decoration: underline;")
+        right_layout.addWidget(lbl_cli)
+
         self.command_output = CommandOutput()
+        right_layout.addWidget(self.command_output)
 
-    def compose(self) -> ComposeResult:
-        yield Header()
+        middle_layout.addWidget(right_pane, stretch=1)
+        
+        main_layout.addLayout(middle_layout, stretch=1)
 
-        with Horizontal(classes='half-height'):
-            with Container(id='diagnostics_container', classes='pane'):
-                yield Label("DIAGNOSTICS", classes='header')
-                yield DiagnosticsDisplay(self.ros_node)
-                yield Label("PLANNED PATH", classes='header')
-                yield PathCanvas(self.ros_node)
+        # Input Footer
+        self.command_input = QLineEdit()
+        self.command_input.setPlaceholderText("Command...")
+        self.command_input.returnPressed.connect(self.on_input_submitted)
+        main_layout.addWidget(self.command_input)
 
-            with Container(id='cli_container', classes='pane'):
-                yield Label('COMMAND LINE INTERFACE', classes='header')
-                with VerticalScroll(id='output_scroll'):
-                    yield self.command_output 
-                yield Input(placeholder='Command...', id='command_input')
-
-        yield Footer()
-
-    def on_mount(self):
-        # start ros spin
-        threading.Thread(target=rclpy.spin, args=(self.ros_node,), daemon=True).start()
-
-        # welcome msg
+        # Help menu on start
         print_help(self)
+        self.command_input.setFocus()
 
-        # focus the input
-        self.query_one('#command_input', Input).focus()
-
-    def on_input_submitted(self, event: Input.Submitted):
-        cmd = event.value.strip()
-
-        # skip if nothing
+    def on_input_submitted(self):
+        cmd = self.command_input.text().strip()
+        
         if not cmd:
-            return 
+            return
 
-        # show command in output
+        # Show command
         self.command_output.add_line(f'> {cmd}')
+        self.command_input.clear()
 
-        # clear input
-        event.input.value = ''
+        # Execute
+        self.execute_command(cmd)
 
-        # execute command
+    def on_input_submitted(self):
+        cmd = self.command_input.text().strip()
+        if not cmd:
+            return
+        self.command_output.add_line(f'> {cmd}')
+        self.command_input.clear()
         self.execute_command(cmd)
 
     def execute_command(self, cmd: str):
         try:
-            parts = cmd.split() 
+            parts = cmd.split()
             command = parts[0].lower()
 
             if command == 'help':
@@ -87,7 +148,7 @@ class AP1DebugUI(App):
 
             elif command == 'clear':
                 self.command_output.history.clear()
-                self.command_output.update('')
+                self.command_output.setText('')
                 self.command_output.add_line('History cleared') # may remove if annoying
 
             elif command == 'speed':
@@ -123,3 +184,15 @@ class AP1DebugUI(App):
         except Exception as e:
             self.command_output.add_line(f"Error: {str(e)}")
 
+
+    def run(self, node: AP1SystemInterfaceNode):
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        
+        if rclpy:
+            spin_thread = threading.Thread(target=rclpy.spin, args=(node,), daemon=True)
+            spin_thread.start()
+
+        window = self
+        window.show()
+
+        sys.exit(self.app.exec())
