@@ -11,10 +11,10 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget,
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 
-from node import AP1SystemInterfaceNode
-from command_output import CommandOutput
-from diagnostics_display import DiagnosticsDisplay
-from visual_path import PathCanvas
+from .node import AP1SystemInterfaceNode
+from .command_output import CommandOutput
+from .diagnostics_display import DiagnosticsDisplay
+from .visual_path import PathCanvas
 
 def print_help(self):
     self.command_output.add_line('=' * 40)

@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QFont
 
-from node import AP1SystemInterfaceNode
+from .node import AP1SystemInterfaceNode
 
 class DiagnosticsDisplay(QWidget):
     """

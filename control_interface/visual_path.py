@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import QWidget
 from PyQt6.QtGui import QPainter, QPen, QBrush
 from PyQt6.QtCore import Qt, QTimer
 
-from node import AP1SystemInterfaceNode
+from .node import AP1SystemInterfaceNode
 
 WHITE = Qt.GlobalColor.white
 DIM = Qt.GlobalColor.darkGray

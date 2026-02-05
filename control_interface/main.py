@@ -4,8 +4,8 @@ import rclpy
 
 from PyQt6.QtWidgets import QApplication
 
-from control_ui import AP1DebugUI
-from node import AP1SystemInterfaceNode
+from .control_ui import AP1DebugUI
+from .node import AP1SystemInterfaceNode
 
 # main time bbgl
 def main(args=None):
