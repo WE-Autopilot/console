@@ -1,6 +1,6 @@
 from rclpy.node import Node
 from geometry_msgs.msg import Point 
-from ap1_msgs.msg import VehicleSpeedStamped, TurnAngleStamped, MotorPowerStamped, TargetPathStamped, SpeedProfileStamped, FloatStamped
+from ap1_msgs.msg import VehicleSpeedStamped, TurnAngleStamped, MotorPowerStamped, TargetPathStamped, SpeedProfileStamped, FloatStamped, FloatStamped
 
 import xml.etree.ElementTree as ET
 from std_msgs.msg import String
@@ -19,7 +19,7 @@ class AP1SystemInterfaceNode(Node):
         self.current_motor_power_sub = self.create_subscription(FloatStamped, '/ap1/control/motor_power', self.motor_power_callback, 10)
         self.path_sub = self.create_subscription(TargetPathStamped, '/ap1/planning/target_path', self.target_path_callback, 10)
         self.speed_profile = self.create_subscription(SpeedProfileStamped, '/ap1/planning/speed_profile', self.speed_profile_callback, 10)
-        self.xml_sub = self.create_subscription(String, '/ap1/map/full_had_map', self.xml_callback, 10)
+        self.xml_sub = self.create_subscription(String, '/ap1/map/full_had_map', self.xml_callback, 10) # probably not needed anymore
 
         self.current_speed = 0.0 # m
         self.target_speed = 0.0 # m/s
@@ -50,7 +50,7 @@ class AP1SystemInterfaceNode(Node):
 
         # assemble msg
         msg = FloatStamped()
-        msg.value = speed 
+        msg.value = speed
         msg.header.stamp = self.get_clock().now().to_msg()
 
         # send out msg

@@ -132,8 +132,6 @@ std-msgs==5.3.6
 std-srvs==5.3.6
 stereo-msgs==5.3.6
 teleop-twist-keyboard==2.4.1
-textual==6.6.0
-textual-canvas==1.1.0
 tf2-geometry-msgs==0.36.16
 tf2-kdl==0.36.16
 tf2-msgs==0.36.16
@@ -149,3 +147,4 @@ typing_extensions==4.15.0
 uc-micro-py==1.0.3
 unique-identifier-msgs==2.5.0
 visualization-msgs==5.3.6
+PyQt6==6.10.2
