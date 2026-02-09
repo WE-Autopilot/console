@@ -1,6 +1,6 @@
 from rclpy.node import Node
 from geometry_msgs.msg import Point 
-from ap1_msgs.msg import VehicleSpeedStamped, TurnAngleStamped, MotorPowerStamped, TargetPathStamped, SpeedProfileStamped, FloatStamped
+from ap1_msgs.msg import VehicleSpeedStamped, TurnAngleStamped, MotorPowerStamped, TargetPathStamped, SpeedProfileStamped, FloatStamped, FloatStamped
 
 import xml.etree.ElementTree as ET
 from std_msgs.msg import String
