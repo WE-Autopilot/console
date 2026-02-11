@@ -1,6 +1,9 @@
 import sys
 import threading
 import signal
+import subprocess
+import time
+
 
 import rclpy
 
@@ -8,7 +11,8 @@ import rclpy
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget,
                             QVBoxLayout, QHBoxLayout, QLineEdit,
                             QLabel)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
+
 from PyQt6.QtGui import QFont
 
 from .node import AP1SystemInterfaceNode
@@ -22,7 +26,9 @@ def print_help(self):
     self.command_output.add_line('Commands:')
     self.command_output.add_line('\tspeed <value>     - Set target speed (m/s)')
     self.command_output.add_line('\tlocation <x> <y>  - Set target location (m)')
-    self.command_output.add_line('\tget_speed_profile - Return planned speed profile (m/s)')
+    self.command_output.add_line('\tget speed_profile - Return planned speed profile (m/s)')
+    self.command_output.add_line('\tget planned_path  - Return planning output path')
+    self.command_output.add_line('\techo topic <topic> [-t seconds] - Echo ROS topic')
     self.command_output.add_line('\treset             - Reset system and simulation (if applicable)')
     self.command_output.add_line('\tclear             - Clear screen')
     self.command_output.add_line('\thelp              - Print this screen')
@@ -33,13 +39,14 @@ class AP1DebugUI(QMainWindow):
     # god bless chat:
     # CSS_PATH = 'style.css'
 
+    echo_output_signal = pyqtSignal(str)
+
     def __init__(self, node: AP1SystemInterfaceNode, app: QApplication):
         super().__init__()
         self.ros_node = node
         self.setWindowTitle("AP1 Debug UI")
         self.resize(1000, 700)
         self.app = app
-
 
         # -- Fonts --
         # Main Header Font
@@ -103,8 +110,12 @@ class AP1DebugUI(QMainWindow):
         self.command_output = CommandOutput()
         right_layout.addWidget(self.command_output)
 
+        self.echo_output_signal.connect(self.command_output.add_line)
+
+        self.active_echo_process=None
+        self.echo_thread=None
+
         middle_layout.addWidget(right_pane, stretch=1)
-        
         main_layout.addLayout(middle_layout, stretch=1)
 
         # Input Footer
@@ -167,14 +178,99 @@ class AP1DebugUI(QMainWindow):
                     self.ros_node.set_target_location(x, y)
                     self.command_output.add_line(f"✓ Target location set to ({x}, {y})")
 
-            elif command == 'get_speed_profile':
-                speed_profile = self.ros_node.speed_profile
+            elif command == 'get':
+                if len(parts) < 2:
+                    self.command_output.add_line('Error! Usage: get <speed_profile | planned_path>')
+                    return
 
-                out = ''
-                for spd in speed_profile:
-                    out += spd.__str__() + ' m/s, '
-                out = out[:-2]
-                self.command_output.add_line('{ ' + out + ' }')
+                subcommand = parts[1].lower()
+
+                if subcommand == 'speed_profile':
+                    speed_profile = self.ros_node.speed_profile
+                    if not speed_profile:
+                        self.command_output.add_line('Speed profile is empty.')
+                        return
+
+                    out = ', '.join(f'{spd} m/s' for spd in speed_profile)
+                    self.command_output.add_line('{ ' + out + ' }')
+
+                elif subcommand == 'planned_path':
+                    path = self.ros_node.target_path
+                    if not path:
+                        self.command_output.add_line('Planned path is empty.')
+                        return
+
+                    out = ', '.join(f'({pt.x:.2f}, {pt.y:.2f})' for pt in path)
+                    self.command_output.add_line('{ ' + out + ' }')
+
+                else:
+                    self.command_output.add_line('Unknown get command.')
+
+            elif command == 'echo':
+                if len(parts) < 3 or parts[1] != 'topic':
+                    self.command_output.add_line('Usage: echo topic <topic_name> [-t seconds]')
+                    return
+
+                topic_name = parts[2]
+                timeout = None
+
+                if '-t' in parts:
+                    try:
+                        idx = parts.index('-t')
+                        timeout = int(parts[idx + 1])
+                    except:
+                        self.command_output.add_line('Invalid timeout value.')
+                        return
+
+                self.command_output.add_line(f'Echoing {topic_name}... (Type "stop" to stop)')
+
+                def run_echo():
+                    try:
+                        process = subprocess.Popen(
+                            ['ros2', 'topic', 'echo', topic_name],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            text=True
+                        )
+
+                        self.active_echo_process = process
+
+                        start_time = time.time()
+
+                        for line in process.stdout:
+
+                            if process.poll() is not None:
+                                break
+
+                            self.echo_output_signal.emit(line.strip())
+
+                            if timeout and (time.time() - start_time > timeout):
+                                process.terminate()
+                                self.echo_output_signal.emit('Echo timeout reached.')
+                                break
+
+                    except Exception as e:
+                        self.echo_output_signal.emit(f'Error: {str(e)}')
+                    finally:
+                        self.active_echo_process = None
+                        self.echo_thread = None
+
+                self.echo_thread = threading.Thread(target=run_echo, daemon=True).start()
+                self.echo_thread.start()
+
+            elif command == 'stop':
+                if self.active_echo_process is None:
+                    self.command_output.add_line('No active echo process to stop')
+                else: 
+                    try:
+                        self.active_echo_process.terminate()
+                        self.active_echo_process.wait(timeout=2)
+                        self.command_output.add_line('Echo stopped')
+                    except:
+                        self.active_echo_process.kill()
+                        self.command_output.add_line('Echo KILLED')
+                    finally:
+                        self.active_echo_process = None
 
             elif command == 'reset':
                 self.command_output.add_line("Not yet implemented.")
