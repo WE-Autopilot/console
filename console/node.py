@@ -10,16 +10,15 @@ class AP1SystemInterfaceNode(Node):
         super().__init__('ap1_debug_ui')
 
         # publishers
-        self.speed_pub = self.create_publisher(FloatStamped, '/ap1/control/target_speed', 10)
-        self.target_location_pub = self.create_publisher(Point, '/ap1/control/target_location', 10)
+        self.speed_pub = self.create_publisher(FloatStamped, '/ap1/control/target_speed', 1)
+        self.target_location_pub = self.create_publisher(Point, '/ap1/control/target_location', 1)
 
         # subscribers
-        self.speed_sub = self.create_subscription(FloatStamped, '/ap1/actuation/speed_actual', self.speed_callback, 10)
-        self.turn_angle_sub = self.create_subscription(FloatStamped, '/ap1/actuation/turn_angle_actual', self.turn_angle_callback, 10)
-        self.current_motor_power_sub = self.create_subscription(FloatStamped, '/ap1/control/motor_power', self.motor_power_callback, 10)
-        self.path_sub = self.create_subscription(TargetPathStamped, '/ap1/planning/target_path', self.target_path_callback, 10)
-        self.speed_profile = self.create_subscription(SpeedProfileStamped, '/ap1/planning/speed_profile', self.speed_profile_callback, 10)
-        self.xml_sub = self.create_subscription(String, '/ap1/map/full_had_map', self.xml_callback, 10) # probably not needed anymore
+        self.speed_sub = self.create_subscription(FloatStamped, '/ap1/actuation/speed', self.speed_callback, 1)
+        self.turn_angle_sub = self.create_subscription(FloatStamped, '/ap1/actuation/turn_angle_actual', self.turn_angle_callback, 1)
+        self.current_motor_power_sub = self.create_subscription(FloatStamped, '/ap1/control/motor_power', self.motor_power_callback, 1)
+        self.path_sub = self.create_subscription(TargetPathStamped, '/ap1/planning/target_path', self.target_path_callback, 1)
+        self.speed_profile = self.create_subscription(SpeedProfileStamped, '/ap1/planning/speed_profile', self.speed_profile_callback, 1)
 
         self.current_speed = 0.0 # m
         self.target_speed = 0.0 # m/s
