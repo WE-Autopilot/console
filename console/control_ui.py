@@ -65,7 +65,7 @@ class AP1DebugUI(QMainWindow):
         main_layout = QVBoxLayout(central_widget)
 
         # Header
-        header = QLabel("AP1 CONTROL INTERFACE")
+        header = QLabel("AP1 CONSOLE")
         header.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header.setFont(header_font)
         header.setContentsMargins(0, 0, 0, 5)

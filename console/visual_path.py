@@ -140,7 +140,7 @@ class PathCanvas(QWidget):
         painter.end()
 
     def _draw_axes(self, painter: QPainter, w: int, h: int):
-        """Draw the X (forward) and Y (left) reference axes through the car origin."""
+        """Draw the X (forward) and Y (left) reference axes through the car origin, with labels."""
         pen = QPen(DIM)
         pen.setWidth(1)
         painter.setPen(pen)
@@ -148,6 +148,16 @@ class PathCanvas(QWidget):
         ox, oy = canvas_to_screen(0, 0, w, h)
         painter.drawLine(0, oy, w, oy)  # horizontal — left/right axis (+Y)
         painter.drawLine(ox, 0, ox, h)  # vertical   — forward axis    (+X)
+
+        # Axis labels — drawn in dim gray near the positive ends of each axis
+        painter.setPen(QPen(DIM))
+        margin = 4  # px from edge / axis line
+
+        # +X label: top of the vertical axis (forward = up)
+        painter.drawText(ox + margin, margin + 12, "+x")
+
+        # +Y label: left edge of the horizontal axis (left = left)
+        painter.drawText(margin, oy - margin, "+y")
 
     def _draw_path(self, painter: QPainter, w: int, h: int):
         """Draw lines between consecutive waypoints, then waypoint dots on top."""
@@ -199,16 +209,20 @@ class PathCanvas(QWidget):
         painter.drawEllipse(px - r, py - r, TARGET_SIZE, TARGET_SIZE)
 
     def _draw_lanes(self, painter: QPainter, w: int, h: int):
-        """Draw left and right lane boundaries as blue polylines."""
+        """Draw lane boundaries as polylines — left in purple, right in blue."""
         if self.node.lane is None:
             return
 
-        pen = QPen(BLUE)
-        pen.setWidth(2)
-        painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
 
-        for side in (self.node.lane.left, self.node.lane.right):
+        for side, color in (
+            (self.node.lane.left,  PURPLE),
+            (self.node.lane.right, BLUE),
+        ):
+            pen = QPen(color)
+            pen.setWidth(2)
+            painter.setPen(pen)
+
             for p1, p2 in zip(side, side[1:]):
                 x1, y1 = world_to_screen(p1, w, h)
                 x2, y2 = world_to_screen(p2, w, h)
