@@ -15,9 +15,12 @@ from PyQt6.QtWidgets import QWidget
 from PyQt6.QtGui import QPainter, QPen, QBrush
 from PyQt6.QtCore import Qt, QTimer
 
-from .node import AP1SystemInterfaceNode
+from .node import AP1ConsoleNode
 
-# ── Colors ────────────────────────────────────────────────────────────────────
+# || DEFAULTS
+DEFAULT_FEATURE_TYPE = "stop_sign" # TEMPORARY, entities don't contain types yet so this is for now
+
+# || Colors 
 WHITE  = Qt.GlobalColor.white
 DIM    = Qt.GlobalColor.darkGray
 RED    = Qt.GlobalColor.red
@@ -34,7 +37,7 @@ FEATURE_COLORS = {
     'yield_sign':    BLUE,
 }
 
-# ── Canvas constants ──────────────────────────────────────────────────────────
+# || Canvas constants
 # The logical canvas is a fixed 60×60 unit grid. The car sits at the
 # bottom-center: (ORIGIN_X, ORIGIN_Y) in logical units.
 CANVAS_W  = 60             # logical width  (units)
@@ -50,7 +53,7 @@ DOT_SIZE    = 6  # px – waypoint / feature marker diameter
 TARGET_SIZE = 8  # px – target location marker diameter
 
 
-# ── Coordinate transforms ─────────────────────────────────────────────────────
+# || Coordinate transforms
 
 class Point:
     def __init__(self, x: float, y: float):
@@ -106,12 +109,12 @@ def world_to_screen(point: Point, screen_w: int, screen_h: int) -> tuple[int, in
     return canvas_to_screen(cx, cy, screen_w, screen_h)
 
 
-# ── Widget ────────────────────────────────────────────────────────────────────
+# || Widget
 
 class PathCanvas(QWidget):
     REFRESH_RATE = 10  # Hz
 
-    def __init__(self, node: AP1SystemInterfaceNode, parent=None):
+    def __init__(self, node: AP1ConsoleNode, parent=None):
         super().__init__(parent)
         self.node = node
 
@@ -122,7 +125,7 @@ class PathCanvas(QWidget):
         self.timer.timeout.connect(self.update)
         self.timer.start(int(1000 / self.REFRESH_RATE))
 
-    # ── Painting ──────────────────────────────────────────────────────────────
+    #  Painting 
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -188,7 +191,9 @@ class PathCanvas(QWidget):
         painter.setPen(Qt.PenStyle.NoPen)
         r = DOT_SIZE // 2
 
-        for feature_type, x, y in self.node.features:
+        for entity in self.node.entities:
+            x, y = entity.x, entity.y
+            feature_type = DEFAULT_FEATURE_TYPE
             color = FEATURE_COLORS.get(feature_type, WHITE)
             painter.setBrush(QBrush(color))
 

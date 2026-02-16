@@ -1,13 +1,13 @@
 from rclpy.node import Node
 from geometry_msgs.msg import Point 
-from ap1_msgs.msg import TargetPathStamped, SpeedProfileStamped, FloatStamped, FloatStamped, LaneBoundaries
+from ap1_msgs.msg import TargetPathStamped, SpeedProfileStamped, FloatStamped, FloatStamped, LaneBoundaries, EntityState, EntityStateArray
 
 import xml.etree.ElementTree as ET
 from std_msgs.msg import String
 
-class AP1SystemInterfaceNode(Node):
+class AP1ConsoleNode(Node):
     def __init__(self):
-        super().__init__('ap1_debug_ui')
+        super().__init__('ap1_console')
 
         # publishers
         self.speed_pub = self.create_publisher(FloatStamped, '/ap1/control/target_speed', 1)
@@ -20,7 +20,9 @@ class AP1SystemInterfaceNode(Node):
         self.path_sub = self.create_subscription(TargetPathStamped, '/ap1/planning/target_path', self.target_path_callback, 1)
         self.speed_profile = self.create_subscription(SpeedProfileStamped, '/ap1/planning/speed_profile', self.speed_profile_callback, 1)
         self.lane_sub = self.create_subscription(LaneBoundaries, '/ap1/mapping/lanes', self.lane_callback, 1)
+        self.entities_sub = self.create_subscription(EntityStateArray, '/ap1/mapping/entities', self.entities_callback, 1)
 
+        # Fields
         self.current_speed = 0.0 # m
         self.target_speed = 0.0 # m/s
         self.motor_power = 0.0 # [-1, 1]
@@ -28,8 +30,11 @@ class AP1SystemInterfaceNode(Node):
         self.current_turn_angle = 0.0 # rads
         self.target_path = [] # waypoints
         self.speed_profile = [] # m/s
-        self.features = [] # features from map
         self.lane: LaneBoundaries = None
+        self.entities = []
+
+    def entities_callback(self, msg: EntityStateArray):
+        self.entities = msg.entities
 
     def speed_callback(self, msg: FloatStamped):
         self.current_speed = msg.value
@@ -89,7 +94,7 @@ if __name__ == '__main__':
     import rclpy
 
     rclpy.init()
-    node = AP1SystemInterfaceNode()
+    node = AP1ConsoleNode()
 
     try:
         node.set_target_speed(2)

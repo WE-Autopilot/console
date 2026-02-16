@@ -2,14 +2,14 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QFont
 
-from .node import AP1SystemInterfaceNode
+from .node import AP1ConsoleNode
 
 class DiagnosticsDisplay(QWidget):
     """
     All the diagnostics at the top of the display.
     """
 
-    def __init__(self, node: AP1SystemInterfaceNode, parent=None):
+    def __init__(self, node: AP1ConsoleNode, parent=None):
         super().__init__(parent)
         self.ros_node = node
 

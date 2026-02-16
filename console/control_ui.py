@@ -15,14 +15,14 @@ from PyQt6.QtCore import Qt, pyqtSignal
 
 from PyQt6.QtGui import QFont
 
-from .node import AP1SystemInterfaceNode
+from .node import AP1ConsoleNode
 from .command_output import CommandOutput
 from .diagnostics_display import DiagnosticsDisplay
 from .visual_path import PathCanvas
 
 def print_help(self):
     self.command_output.add_line('=' * 40)
-    self.command_output.add_line('Welcome to AP1 Debug UI')
+    self.command_output.add_line('Welcome to AP1 Console')
     self.command_output.add_line('Commands:')
     self.command_output.add_line('\tspeed <value>     - Set target speed (m/s)')
     self.command_output.add_line('\tlocation <x> <y>  - Set target location (m)')
@@ -41,10 +41,10 @@ class AP1DebugUI(QMainWindow):
 
     echo_output_signal = pyqtSignal(str)
 
-    def __init__(self, node: AP1SystemInterfaceNode, app: QApplication):
+    def __init__(self, node: AP1ConsoleNode, app: QApplication):
         super().__init__()
         self.ros_node = node
-        self.setWindowTitle("AP1 Debug UI")
+        self.setWindowTitle("AP1 Console")
         self.resize(1000, 700)
         self.app = app
 
@@ -69,7 +69,7 @@ class AP1DebugUI(QMainWindow):
         header.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header.setFont(header_font)
         header.setContentsMargins(0, 0, 0, 5)
-        main_layout.addWidget(header)
+        # main_layout.addWidget(header) # removing temp
 
         # Middle Section
         middle_layout = QHBoxLayout()
@@ -105,7 +105,7 @@ class AP1DebugUI(QMainWindow):
 
         lbl_cli = QLabel("COMMAND LINE INTERFACE")
         lbl_cli.setStyleSheet("font-weight: bold; text-decoration: underline;")
-        right_layout.addWidget(lbl_cli)
+        # right_layout.addWidget(lbl_cli) # removing
 
         self.command_output = CommandOutput()
         right_layout.addWidget(self.command_output)
@@ -281,7 +281,7 @@ class AP1DebugUI(QMainWindow):
             self.command_output.add_line(f"Error: {str(e)}")
 
 
-    def run(self, node: AP1SystemInterfaceNode):
+    def run(self, node: AP1ConsoleNode):
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         
         if rclpy:

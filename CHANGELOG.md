@@ -9,8 +9,8 @@
 - [x] Add target waypoint to planned path visualizer
 - [x] Add lanes to planned path visualizer
 
-## v0.1.2 - WIP
+## v0.1.2 - Feb 15, 2026
 - [x] Add labels to axes
 - [x] Fix coordinate system bugs
-- [ ] Rename to "Console" everywhere
-- [ ] Fix bug with entities not showing up
+- [x] Rename to "Console" everywhere
+- [x] Fix bug with entities not showing up

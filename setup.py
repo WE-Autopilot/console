@@ -4,10 +4,10 @@ package_name = 'ap1_console'  # ROS package name
 
 setup(
     name=package_name,                  # Python distribution name
-    version='0.2.0',
+    version='0.1.2',
     # Python package in this repo
     packages=['console'],
-    # Include style.css inside the installed control_interface package
+    # Include style.css inside the installed console package
     package_data={'console': ['style.css']},
     include_package_data=True,
     data_files=[
@@ -24,8 +24,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            # ros2 run ap1_console system_interface
-            'system_interface = console.main:main',
+            # ros2 run ap1_console console
+            'console = console.main:main',
         ],
     },
 )
