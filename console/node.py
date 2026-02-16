@@ -1,6 +1,6 @@
 from rclpy.node import Node
 from geometry_msgs.msg import Point 
-from ap1_msgs.msg import TargetPathStamped, SpeedProfileStamped, FloatStamped, FloatStamped
+from ap1_msgs.msg import TargetPathStamped, SpeedProfileStamped, FloatStamped, FloatStamped, LaneBoundaries
 
 import xml.etree.ElementTree as ET
 from std_msgs.msg import String
@@ -15,10 +15,11 @@ class AP1SystemInterfaceNode(Node):
 
         # subscribers
         self.speed_sub = self.create_subscription(FloatStamped, '/ap1/actuation/speed', self.speed_callback, 1)
-        self.turn_angle_sub = self.create_subscription(FloatStamped, '/ap1/actuation/turn_angle_actual', self.turn_angle_callback, 1)
+        self.turn_angle_sub = self.create_subscription(FloatStamped, '/ap1/actuation/turn_angle', self.turn_angle_callback, 1)
         self.current_motor_power_sub = self.create_subscription(FloatStamped, '/ap1/control/motor_power', self.motor_power_callback, 1)
         self.path_sub = self.create_subscription(TargetPathStamped, '/ap1/planning/target_path', self.target_path_callback, 1)
         self.speed_profile = self.create_subscription(SpeedProfileStamped, '/ap1/planning/speed_profile', self.speed_profile_callback, 1)
+        self.lane_sub = self.create_subscription(LaneBoundaries, '/ap1/mapping/lanes', self.lane_callback, 1)
 
         self.current_speed = 0.0 # m
         self.target_speed = 0.0 # m/s
@@ -28,6 +29,7 @@ class AP1SystemInterfaceNode(Node):
         self.target_path = [] # waypoints
         self.speed_profile = [] # m/s
         self.features = [] # features from map
+        self.lane: LaneBoundaries = None
 
     def speed_callback(self, msg: FloatStamped):
         self.current_speed = msg.value
@@ -43,6 +45,9 @@ class AP1SystemInterfaceNode(Node):
 
     def target_path_callback(self, msg: TargetPathStamped):
         self.target_path = msg.path
+
+    def lane_callback(self, msg: LaneBoundaries):
+        self.lane = msg
     
     def set_target_speed(self, speed: float):
         self.target_speed = speed

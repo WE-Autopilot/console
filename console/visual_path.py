@@ -1,161 +1,215 @@
 """
-Visualizes Car path
-Notice that +x is FORWARD and +y is LEFT relative to the CAR.
+Visualizes the car's path and surrounding features on a 2D canvas.
+
+Coordinate conventions:
+  World space:  +X = FORWARD, +Y = LEFT  (meters)
+  Screen space: +X = RIGHT,   +Y = DOWN  (pixels)
+
+Transform pipeline:
+  world_point
+    → world_to_canvas()   scale meters → logical canvas units, flip axes
+    → canvas_to_screen()  scale logical units → screen pixels
 """
+
 from PyQt6.QtWidgets import QWidget
 from PyQt6.QtGui import QPainter, QPen, QBrush
 from PyQt6.QtCore import Qt, QTimer
 
 from .node import AP1SystemInterfaceNode
 
-WHITE = Qt.GlobalColor.white
-DIM = Qt.GlobalColor.darkGray
-RED = Qt.GlobalColor.red
-GREEN = Qt.GlobalColor.green
+# ── Colors ────────────────────────────────────────────────────────────────────
+WHITE  = Qt.GlobalColor.white
+DIM    = Qt.GlobalColor.darkGray
+RED    = Qt.GlobalColor.red
+GREEN  = Qt.GlobalColor.green
 YELLOW = Qt.GlobalColor.yellow
 PURPLE = Qt.GlobalColor.darkMagenta
-BLUE = Qt.GlobalColor.blue
-BLACK = Qt.GlobalColor.black
+BLUE   = Qt.GlobalColor.blue
+BLACK  = Qt.GlobalColor.black
 
-# EXAMPLE WAYPOINTS
-DEBUG_WAYPOINTS = [(0,0), (5,15), (10,20), (20,25)]
+FEATURE_COLORS = {
+    'stop_sign':     RED,
+    'traffic_light': GREEN,
+    'stop_line':     YELLOW,
+    'yield_sign':    BLUE,
+}
 
-# COORDS
-DEFAULT_WIDTH = 60
-DEFAULT_HEIGHT = 60
+# ── Canvas constants ──────────────────────────────────────────────────────────
+# The logical canvas is a fixed 60×60 unit grid. The car sits at the
+# bottom-center: (ORIGIN_X, ORIGIN_Y) in logical units.
+CANVAS_W  = 60             # logical width  (units)
+CANVAS_H  = 60             # logical height (units)
+ORIGIN_X  = CANVAS_W // 2 # horizontal center — car is laterally centered
+ORIGIN_Y  = CANVAS_H - 1  # near bottom edge  — car is at the bottom
+
+# World extent visible on the canvas (meters)
+WORLD_RANGE_X = 20  # meters forward/backward
+WORLD_RANGE_Y = 20  # meters left/right
+
+DOT_SIZE    = 6  # px – waypoint / feature marker diameter
+TARGET_SIZE = 8  # px – target location marker diameter
+
+
+# ── Coordinate transforms ─────────────────────────────────────────────────────
 
 class Point:
-    def __init__(self, x, y):
+    def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
 
-def global_to_canvas_coords(point: Point) -> tuple[int, int]:
-    MAX_X, MAX_Y = 20, 20 # m
 
-    """Helper to get x,y safely from either an object or a tuple."""
-    if hasattr(point, 'x') and hasattr(point, 'y'):
-        px, py = point.x, point.y
-    elif isinstance(point, (tuple, list)) and len(point) >= 2:
-        px, py = point[0], point[1]
-    else:
-        px, py = 0, 0
+def world_to_canvas(point: Point) -> tuple[float, float]:
+    """
+    Convert a world-space point to logical canvas coordinates.
 
-    # scale down
-    x = int(px / MAX_X * DEFAULT_WIDTH)
-    y = int(py / MAX_Y * DEFAULT_HEIGHT)
+    World convention:  +X = forward (up on screen), +Y = left (left on screen)
+    Canvas convention: origin at bottom-center; +canvas_x = right, +canvas_y = up
 
-    # rotate
-    # +x on the car is +y on canvas, +y on the car is +x on the canvas
-    return y, x
+    Axis mapping:
+        world +X (forward) → canvas -Y (up on screen, since screen Y is flipped)
+        world +Y (left)    → canvas -X (left on screen)
 
+    Both axes are scaled so WORLD_RANGE maps to the full canvas extent.
+    """
+    canvas_x = -point.y / WORLD_RANGE_Y * CANVAS_W  # left/right
+    canvas_y = -point.x / WORLD_RANGE_X * CANVAS_H  # forward/back
+    return canvas_x, canvas_y
+
+
+def canvas_to_screen(cx: float, cy: float, screen_w: int, screen_h: int) -> tuple[int, int]:
+    """
+    Convert logical canvas coordinates to screen pixel coordinates.
+
+    The logical canvas is CANVAS_W × CANVAS_H units, with the car origin at
+    (ORIGIN_X, ORIGIN_Y). This function:
+      1. Shifts the point relative to the car origin.
+      2. Scales to fill the current widget dimensions.
+
+    Screen convention: origin top-left, +X right, +Y down.
+    Note: canvas_y is already negative for "up", so adding it to ORIGIN_Y
+    correctly moves points toward the top of the screen.
+    """
+    scale_x = screen_w / CANVAS_W
+    scale_y = screen_h / CANVAS_H
+
+    sx = (ORIGIN_X + cx) * scale_x
+    sy = (ORIGIN_Y + cy) * scale_y
+    return int(sx), int(sy)
+
+
+def world_to_screen(point: Point, screen_w: int, screen_h: int) -> tuple[int, int]:
+    """
+    Full pipeline: world space → logical canvas → screen pixels.
+    Use this for all drawing operations.
+    """
+    cx, cy = world_to_canvas(point)
+    return canvas_to_screen(cx, cy, screen_w, screen_h)
+
+
+# ── Widget ────────────────────────────────────────────────────────────────────
 
 class PathCanvas(QWidget):
-    refresh_rate = 10 # Hz
+    REFRESH_RATE = 10  # Hz
 
     def __init__(self, node: AP1SystemInterfaceNode, parent=None):
-        # width and height is PIXELS not SIZE!
         super().__init__(parent)
         self.node = node
 
         self.setMinimumSize(300, 300)
-
-        # Style sheet
         self.setStyleSheet("background: black;")
 
-        # Update display
         self.timer = QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(int(1000 / self.refresh_rate))
+        self.timer.start(int(1000 / self.REFRESH_RATE))
+
+    # ── Painting ──────────────────────────────────────────────────────────────
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        waypoints = self.node.target_path[:] # these are in meters (global coords)
-        waypoints.insert(0, Point(0, 0)) # append origin
-        width, height = self.width(), self.height()
+        w, h = self.width(), self.height()
+        painter.fillRect(0, 0, w, h, BLACK)
 
-        painter.fillRect(0, 0, width, height, BLACK)
+        self._draw_axes(painter, w, h)
+        self._draw_path(painter, w, h)
+        self._draw_features(painter, w, h)
+        self._draw_target(painter, w, h)
+        self._draw_lanes(painter, w, h)
 
-        scale_x = width / DEFAULT_WIDTH
-        scale_y = height / DEFAULT_HEIGHT
+        painter.end()
 
-        def logical_to_screen(lx, ly):
-            return lx * scale_x, ly * scale_y
+    def _draw_axes(self, painter: QPainter, w: int, h: int):
+        """Draw the X (forward) and Y (left) reference axes through the car origin."""
+        pen = QPen(DIM)
+        pen.setWidth(1)
+        painter.setPen(pen)
 
-        # (0,0) is bottom center
-        cx = DEFAULT_WIDTH // 2
-        cy = DEFAULT_HEIGHT - 1
+        ox, oy = canvas_to_screen(0, 0, w, h)
+        painter.drawLine(0, oy, w, oy)  # horizontal — left/right axis (+Y)
+        painter.drawLine(ox, 0, ox, h)  # vertical   — forward axis    (+X)
 
-        # draw axes
-        pen_dim = QPen(DIM)
-        pen_dim.setWidth(1)
-        painter.setPen(pen_dim)
-        
-        x_screen, y_screen = logical_to_screen(cx, cy)
+    def _draw_path(self, painter: QPainter, w: int, h: int):
+        """Draw lines between consecutive waypoints, then waypoint dots on top."""
+        waypoints = [Point(0, 0)] + self.node.target_path[:]
 
-        painter.drawLine(0, int(y_screen), width, int(y_screen))
-        painter.drawLine(int(x_screen), 0, int(x_screen), height)
-        
-        # plot waypoints & connect with lines
-        pen_white = QPen(WHITE)
-        pen_white.setWidth(2)
-        painter.setPen(pen_white)
+        # Lines between consecutive waypoints
+        pen = QPen(WHITE)
+        pen.setWidth(2)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
 
-        for i, point in enumerate(waypoints):
-            if i < len(waypoints) - 1:
-                # Current point
-                x, y = global_to_canvas_coords(point)
-                sx = cx + x # shift origin to center
-                sy = cy - y # flip y upward
+        for a, b in zip(waypoints, waypoints[1:]):
+            x1, y1 = world_to_screen(a, w, h)
+            x2, y2 = world_to_screen(b, w, h)
+            painter.drawLine(x1, y1, x2, y2)
 
-                next_point = waypoints[i + 1]
-                nx, ny = global_to_canvas_coords(next_point)
-                nx, ny = cx + nx, cy - ny
-                
-                px1, py1 = logical_to_screen(sx, sy)
-                px2, py2 = logical_to_screen(nx, ny)
-
-                painter.drawLine(int(px1), int(py1), int(px2), int(py2))
-
-        # draw waypoints on top
+        # Dots at each waypoint (drawn after lines so they sit on top)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(PURPLE))
+        r = DOT_SIZE // 2
 
-        dot_size = 6
+        for pt in waypoints:
+            px, py = world_to_screen(pt, w, h)
+            painter.drawEllipse(px - r, py - r, DOT_SIZE, DOT_SIZE)
 
-        for i, point in enumerate(waypoints):
-            x, y = global_to_canvas_coords(point)
-            sx = cx + x # shift origin to center
-            sy = cy - y # flip y upward
-            
-            px, py = logical_to_screen(sx, sy)
-            
-            painter.drawEllipse(int(px - dot_size / 2), int(py - dot_size / 2), dot_size, dot_size)
+    def _draw_features(self, painter: QPainter, w: int, h: int):
+        """Draw detected features (stop signs, traffic lights, etc.) as colored squares."""
+        painter.setPen(Qt.PenStyle.NoPen)
+        r = DOT_SIZE // 2
 
-        # draw features on top
-        for feature in self.node.features:
-            feature_type, x, y = feature
-
-            # convert global coords to canvas
-            sx, sy = global_to_canvas_coords(Point(x, y))
-            sx = cx + sx
-            sy = cy - sy
-
-            px, py = logical_to_screen(sx, sy)
-
-            # map colors to features
-            if feature_type == 'stop_sign':
-                color = RED
-            elif feature_type == 'traffic_light':
-                color = GREEN
-            elif feature_type == 'stop_line':
-                color = YELLOW
-            elif feature_type == 'yield_sign':
-                color = BLUE
-            else:
-                color = WHITE
-
+        for feature_type, x, y in self.node.features:
+            color = FEATURE_COLORS.get(feature_type, WHITE)
             painter.setBrush(QBrush(color))
-            painter.drawRect(int(px - dot_size / 2), int(py - dot_size / 2), dot_size, dot_size)
 
+            px, py = world_to_screen(Point(x, y), w, h)
+            painter.drawRect(px - r, py - r, DOT_SIZE, DOT_SIZE)
+
+    def _draw_target(self, painter: QPainter, w: int, h: int):
+        """Draw the navigation target location as a green circle."""
+        if self.node.target_location is None:
+            return
+
+        tx, ty = self.node.target_location
+        px, py = world_to_screen(Point(tx, ty), w, h)
+        r = TARGET_SIZE // 2
+
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(GREEN))
+        painter.drawEllipse(px - r, py - r, TARGET_SIZE, TARGET_SIZE)
+
+    def _draw_lanes(self, painter: QPainter, w: int, h: int):
+        """Draw left and right lane boundaries as blue polylines."""
+        if self.node.lane is None:
+            return
+
+        pen = QPen(BLUE)
+        pen.setWidth(2)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+
+        for side in (self.node.lane.left, self.node.lane.right):
+            for p1, p2 in zip(side, side[1:]):
+                x1, y1 = world_to_screen(p1, w, h)
+                x2, y2 = world_to_screen(p2, w, h)
+                painter.drawLine(x1, y1, x2, y2)
