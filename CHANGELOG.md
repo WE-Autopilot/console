@@ -18,7 +18,11 @@
 ## v0.1.3 - Feb 18, 2026
 "Update viewport"
 - [x] Increase FOV
-- [x] Stretch with the window dynamically
 - [x] Scroll to zoom
 - [x] Click to pan
 - [x] Color key
+
+## v0.1.4 - WIP
+- [ ] Stretch with the window dynamically
+- [x] Update viewport key
+- [x] Remove "target" from viewport (Removed from planning)

@@ -176,7 +176,7 @@ class PathCanvas(QWidget):
         px, py = self.world_to_screen(Point(0, 0))
         size = 8
 
-        pen = QPen(GREEN)
+        pen = QPen(YELLOW)
         pen.setWidth(2)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -198,7 +198,6 @@ class PathCanvas(QWidget):
         self._draw_axes(painter)
         self._draw_path(painter)
         self._draw_features(painter)
-        self._draw_target(painter)
         self._draw_lanes(painter)
         self._draw_car(painter)
         self._draw_legend(painter)
@@ -210,14 +209,11 @@ class PathCanvas(QWidget):
         """Draw a color key in the bottom-right corner"""
         entries = [
             ("Waypoint", PURPLE, "ellipse"),
-            ("Target", GREEN, "ellipse"),
             ("Path", WHITE, "line"),
             ("Left lane", PURPLE, "line"),
             ("Right lane", BLUE, "line"),
             ("Stop sign", RED, "rect"),
-            ("Traffic light", GREEN, "rect"),
-            # ("Stop line", YELLOW, "rect"),
-            # ("Yield sign", BLUE, "rect"),
+            ("Car", YELLOW, "rect"),
         ]
 
         box_size = 10
@@ -301,7 +297,7 @@ class PathCanvas(QWidget):
 
         # Dots at each waypoint (drawn after lines so they sit on top)
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QBrush(PURPLE))
+        painter.setBrush(QBrush(GREEN))
         r = DOT_SIZE // 2
 
         for pt in waypoints:
@@ -322,6 +318,7 @@ class PathCanvas(QWidget):
             px, py = self.world_to_screen(Point(x, y))
             painter.drawRect(px - r, py - r, DOT_SIZE, DOT_SIZE)
 
+    @DeprecationWarning
     def _draw_target(self, painter: QPainter):
         """Draw the navigation target location as a green circle."""
         if self.node.target_location is None:
