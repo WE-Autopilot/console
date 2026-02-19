@@ -4,7 +4,7 @@ package_name = 'ap1_console'  # ROS package name
 
 setup(
     name=package_name,                  # Python distribution name
-    version='0.1.2',
+    version='0.1.3',
     # Python package in this repo
     packages=['console'],
     # Include style.css inside the installed console package

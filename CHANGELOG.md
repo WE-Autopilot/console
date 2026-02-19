@@ -14,3 +14,11 @@
 - [x] Fix coordinate system bugs
 - [x] Rename to "Console" everywhere
 - [x] Fix bug with entities not showing up
+
+## v0.1.3 - Feb 18, 2026
+"Update viewport"
+- [x] Increase FOV
+- [x] Stretch with the window dynamically
+- [x] Scroll to zoom
+- [x] Click to pan
+- [x] Color key

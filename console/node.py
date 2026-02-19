@@ -15,7 +15,7 @@ class AP1ConsoleNode(Node):
 
         # subscribers
         self.speed_sub = self.create_subscription(FloatStamped, '/ap1/actuation/speed', self.speed_callback, 1)
-        self.turn_angle_sub = self.create_subscription(FloatStamped, '/ap1/actuation/turn_angle', self.turn_angle_callback, 1)
+        self.turn_angle_sub = self.create_subscription(FloatStamped, '/ap1/control/turn_angle', self.turn_angle_callback, 1)
         self.current_motor_power_sub = self.create_subscription(FloatStamped, '/ap1/control/motor_power', self.motor_power_callback, 1)
         self.path_sub = self.create_subscription(TargetPathStamped, '/ap1/planning/target_path', self.target_path_callback, 1)
         self.speed_profile = self.create_subscription(SpeedProfileStamped, '/ap1/planning/speed_profile', self.speed_profile_callback, 1)
