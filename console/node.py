@@ -1,5 +1,6 @@
 from rclpy.node import Node
 from geometry_msgs.msg import Point 
+from std_msgs.msg import String
 from ap1_msgs.msg import TargetPathStamped, SpeedProfileStamped, FloatStamped, FloatStamped, LaneBoundaries, EntityState, EntityStateArray
 
 import xml.etree.ElementTree as ET
@@ -21,6 +22,7 @@ class AP1ConsoleNode(Node):
         self.speed_profile = self.create_subscription(SpeedProfileStamped, '/ap1/planning/speed_profile', self.speed_profile_callback, 1)
         self.lane_sub = self.create_subscription(LaneBoundaries, '/ap1/mapping/lanes', self.lane_callback, 1)
         self.entities_sub = self.create_subscription(EntityStateArray, '/ap1/mapping/entities', self.entities_callback, 1)
+        self.planning_state_sub = self.create_subscription(String, '/ap1/planning/state', self.planning_state_callback, 1)
 
         # Fields
         self.current_speed = 0.0 # m
@@ -32,6 +34,10 @@ class AP1ConsoleNode(Node):
         self.speed_profile = [] # m/s
         self.lane: LaneBoundaries = None
         self.entities = []
+        self.planning_state: str = "N/A"
+
+    def planning_state_callback(self, msg: String):
+        self.planning_state = msg.data
 
     def entities_callback(self, msg: EntityStateArray):
         self.entities = msg.entities

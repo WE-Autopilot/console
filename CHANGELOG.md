@@ -24,5 +24,6 @@
 
 ## v0.1.4 - WIP
 - [ ] Stretch with the window dynamically
+- [x] Add planning state to diagnostics
 - [x] Update viewport key
 - [x] Remove "target" from viewport (Removed from planning)

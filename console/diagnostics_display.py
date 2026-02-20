@@ -42,16 +42,20 @@ class DiagnosticsDisplay(QWidget):
         target_speed = self.ros_node.target_speed
         target_loc = self.ros_node.target_location
         motor_power = self.ros_node.motor_power * 100
+        current_state = self.ros_node.planning_state
 
         display_text = f"""Actuation:
 - Speed:\t{speed:6.2f} m/s
 - Turn Angle:\t{turn_angle:6.2f} rads
 
-Control Interface:
+Console (Output):
 - Target Speed:\t{target_speed:6.2f} m/s
 - Target Loc:\t{target_loc[0]:6.2f}, {target_loc[1]:6.2f}
 
 Control:
 - Motor power:\t{motor_power:6.2f} %
+
+Planning:
+- Current state: \t{current_state}
 """
         self.content_label.setText(display_text)
