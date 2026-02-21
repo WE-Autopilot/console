@@ -18,6 +18,7 @@ class AP1ConsoleNode(Node):
         self.speed_sub = self.create_subscription(FloatStamped, '/ap1/actuation/speed', self.speed_callback, 1)
         self.turn_angle_sub = self.create_subscription(FloatStamped, '/ap1/control/turn_angle', self.turn_angle_callback, 1)
         self.current_motor_power_sub = self.create_subscription(FloatStamped, '/ap1/control/motor_power', self.motor_power_callback, 1)
+        self.brake_sub = self.create_subscription(FloatStamped, '/ap1/control/brake', self.brake_callback, 1)
         self.path_sub = self.create_subscription(TargetPathStamped, '/ap1/planning/target_path', self.target_path_callback, 1)
         self.speed_profile = self.create_subscription(SpeedProfileStamped, '/ap1/planning/speed_profile', self.speed_profile_callback, 1)
         self.lane_sub = self.create_subscription(LaneBoundaries, '/ap1/mapping/lanes', self.lane_callback, 1)
@@ -27,7 +28,8 @@ class AP1ConsoleNode(Node):
         # Fields
         self.current_speed = 0.0 # m
         self.target_speed = 0.0 # m/s
-        self.motor_power = 0.0 # [-1, 1]
+        self.motor_power = 0.0 # [0, 1]
+        self.brake = 0.0 # [0, 1]
         self.target_location = (0.0, 0.0) # m
         self.current_turn_angle = 0.0 # rads
         self.target_path = [] # waypoints
@@ -35,6 +37,10 @@ class AP1ConsoleNode(Node):
         self.lane: LaneBoundaries = None
         self.entities = []
         self.planning_state: str = "N/A"
+
+    # TODO: replace all with anonymous funcs
+    def brake_callback(self, msg):
+        self.brake = msg.value
 
     def planning_state_callback(self, msg: String):
         self.planning_state = msg.data

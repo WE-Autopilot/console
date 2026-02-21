@@ -42,6 +42,7 @@ class DiagnosticsDisplay(QWidget):
         target_speed = self.ros_node.target_speed
         target_loc = self.ros_node.target_location
         motor_power = self.ros_node.motor_power * 100
+        brake = self.ros_node.brake * 100
         current_state = self.ros_node.planning_state
 
         display_text = f"""Actuation:
@@ -54,6 +55,7 @@ Console (Output):
 
 Control:
 - Motor power:\t{motor_power:6.2f} %
+- Brake: \t{brake:6.2f} %
 
 Planning:
 - Current state: \t{current_state}
