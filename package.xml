@@ -10,7 +10,7 @@
   <depend>rclpy</depend>
   <depend>std_msgs</depend>
   <depend>ap1_msgs</depend>
-<!--  <depend>pyqt6</depend> -->
+<exec_depend>python3-pyqt6</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
